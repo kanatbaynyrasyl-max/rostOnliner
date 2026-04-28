@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ROSTONLINE — Проверка роста</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --secondary: #f39c12;
+            --bg: #f4f7f6;
+            --text: #333;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        h1 { color: var(--primary); margin-bottom: 0.5rem; }
+        p.subtitle { color: #666; margin-bottom: 1.5rem; font-size: 0.9rem; }
+
+        .input-group {
+            margin-bottom: 1rem;
+            text-align: left;
+        }
+
+        label { display: block; margin-bottom: 0.5rem; font-weight: bold; }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 1rem;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-top: 1rem;
+        }
+
+        button:hover { background-color: #357abd; }
+
+        #result {
+            margin-top: 1.5rem;
+            padding: 1rem;
+            border-radius: 8px;
+            display: none;
+            line-height: 1.5;
+        }
+
+        .info-text {
+            font-size: 0.85rem;
+            color: #777;
+            margin-top: 1rem;
+            font-style: italic;
+        }
+
+        .norm { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .deviation { background-color: #fff3e0; color: #e65100; border: 1px solid #ffe0b2; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>ROSTONLINE</h1>
+    <p class="subtitle">Узнайте соответствие вашего роста возрастным нормам</p>
+
+    <div class="input-group">
+        <label>Ваш пол:</label>
+        <select id="gender">
+            <option value="male">Мужской</option>
+            <option value="female">Женский</option>
+        </select>
+    </div>
+
+    <div class="input-group">
+        <label>Ваш возраст (лет):</label>
+        <input type="number" id="age" placeholder="Например, 25" min="0" max="120">
+    </div>
+
+    <div class="input-group">
+        <label>Ваш рост (см):</label>
+        <input type="number" id="height" placeholder="Например, 175" min="30" max="250">
+    </div>
+
+    <button onclick="checkGrowth()">Проверить результат</button>
+
+    <div id="result"></div>
+    
+    <p class="info-text">Данные носят справочный характер на основе средних показателей.</p>
+</div>
+
+<script>
+    const data = [
+        { age: 0, male: 50, female: 49, desc: "Период самого быстрого роста." },
+        { age: 1, male: 76, female: 74, desc: "Рост увеличивается на ~25 см за год." },
+        { age: 5, male: 110, female: 109, desc: "Стабильный рост, формирование скелета." },
+        { age: 10, male: 138, female: 139, desc: "Девочки могут начать обгонять мальчиков." },
+        { age: 15, male: 170, female: 162, desc: "Активный пубертатный скачок." },
+        { age: 20, male: 176, female: 164, desc: "Точка максимального роста." },
+        { age: 30, male: 176, female: 164, desc: "Точка максимального роста." },
+        { age: 40, male: 176, female: 164, desc: "Рост стабилен, зоны роста закрыты." },
+        { age: 50, male: 175, female: 163, desc: "Начало естественной «усадки» (-0.5–1 см)." },
+        { age: 60, male: 174, female: 162, desc: "Межпозвоночные диски теряют влагу." },
+        { age: 70, male: 172, female: 160, desc: "Снижение плотности костей, изменение осанки." },
+        { age: 80, male: 170, female: 158, desc: "Уменьшение роста становится заметным." },
+        { age: 90, male: 168, female: 156, desc: "Общая потеря роста может достичь 5–8 см." },
+        { age: 100, male: 168, female: 156, desc: "Общая потеря роста может достичь 5–8 см." }
+    ];
+
+    function checkGrowth() {
+        const age = parseInt(document.getElementById('age').value);
+        const height = parseInt(document.getElementById('height').value);
+        const gender = document.getElementById('gender').value;
+        const resultDiv = document.getElementById('result');
+
+        if (isNaN(age) || isNaN(height)) {
+            alert("Пожалуйста, введите корректные данные.");
+            return;
+        }
+
+        // Поиск ближайшей возрастной точки в таблице
+        let closest = data.reduce((prev, curr) => {
+            return (Math.abs(curr.age - age) < Math.abs(prev.age - age) ? curr : prev);
+        });
+
+        const targetHeight = (gender === 'male') ? closest.male : closest.female;
+        const diff = height - targetHeight;
+        
+        let message = `<strong>Ваш возраст (близко к):</strong> ${closest.age} л.<br>`;
+        message += `<strong>Средняя норма:</strong> ${targetHeight} см.<br>`;
+        message += `<strong>Ваш результат:</strong> ${height} см.<br><hr>`;
+        message += `<strong>Особенности периода:</strong> ${closest.desc}<br><br>`;
+
+        if (Math.abs(diff) <= 5) {
+            resultDiv.className = "norm";
+            message += "✅ Ваш рост в пределах статистической нормы.";
+        } else if (diff > 5) {
+            resultDiv.className = "deviation";
+            message += `📈 Ваш рост выше среднего показателя на ${diff} см.`;
+        } else {
+            resultDiv.className = "deviation";
+            message += `📉 Ваш рост ниже среднего показателя на ${Math.abs(diff)} см.`;
+        }
+
+        resultDiv.innerHTML = message;
+        resultDiv.style.display = "block";
+    }
+</script>
+
+</body>
+</html>
